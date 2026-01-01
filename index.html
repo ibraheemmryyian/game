@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- removed maximum-scale to preserve zoom accessibility -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Salfeh Blind Pro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .card-gradient { background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); }
+    body { background-color: #0f172a; color: white; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .visually-hidden { position: absolute !important; height: 1px; width: 1px; overflow: hidden; clip: rect(1px, 1px, 1px, 1px); white-space: nowrap; }
+  </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4 hide-scrollbar">
+
+  <main class="w-full max-w-md">
+    <section id="setup" class="space-y-6">
+      <h1 class="text-4xl font-black text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">SALFEH BLIND</h1>
+
+      <div class="bg-slate-800 p-6 rounded-3xl shadow-xl space-y-4 border border-slate-700">
+        <div>
+          <label for="playerCount" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 text-center">Number of Players</label>
+          <input type="number" id="playerCount" value="3" min="3" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-center text-2xl font-bold focus:ring-2 focus:ring-purple-500 outline-none" inputmode="numeric" />
+        </div>
+
+        <div class="pt-2">
+          <button id="startBtn" type="button" class="w-full card-gradient hover:opacity-90 transition-all py-5 rounded-2xl font-black text-xl shadow-lg uppercase tracking-wider">Start Game</button>
+        </div>
+      </div>
+
+      <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50">
+        <p class="text-xs text-slate-400 mb-2 text-center font-semibold uppercase">Add Custom Pair (Optional)</p>
+        <div class="flex gap-2">
+          <label for="custom1" class="visually-hidden">Word A</label>
+          <input type="text" id="custom1" maxlength="32" placeholder="Word A" class="w-1/2 bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm outline-none" />
+          <label for="custom2" class="visually-hidden">Word B</label>
+          <input type="text" id="custom2" maxlength="32" placeholder="Word B" class="w-1/2 bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm outline-none" />
+        </div>
+      </div>
+    </section>
+
+    <section id="gameplay" class="hidden text-center space-y-6" aria-live="polite">
+      <div class="bg-slate-800 p-8 rounded-[2.5rem] shadow-2xl border-2 border-slate-700 relative overflow-hidden">
+        <div id="playerBadge" class="inline-block px-4 py-1 rounded-full bg-purple-500/20 text-purple-400 text-xs font-bold uppercase mb-4">Player 1</div>
+
+        <div id="cardArea" class="py-8 px-4 bg-slate-900 rounded-3xl border-2 border-dashed border-slate-700">
+          <!-- Pass screen -->
+          <div id="passScreen" class="space-y-4">
+            <p id="passText" class="text-slate-400 font-medium">Pass the device to <span id="passPlayer">Player 1</span></p>
+            <button id="revealBtn" type="button" class="w-full card-gradient hover:opacity-90 transition-all py-4 rounded-2xl font-black text-xl shadow-lg uppercase tracking-wider">Reveal Word</button>
+          </div>
+
+          <!-- Secret card -->
+          <div id="secretCard" class="hidden cursor-pointer" tabindex="0">
+            <p id="instruction" class="text-slate-500 font-medium">TAP TO REVEAL</p>
+            <h3 id="secretWord" class="hidden text-5xl font-black tracking-tighter text-white uppercase italic" aria-live="assertive">---</h3>
+          </div>
+        </div>
+
+        <button id="nextBtn" type="button" class="hidden w-full mt-8 bg-white text-slate-900 py-5 rounded-2xl font-black text-xl transition-transform active:scale-95 shadow-xl">I've Seen It</button>
+      </div>
+
+      <p class="text-slate-500 text-xs font-medium uppercase tracking-widest">Don't let anyone see your screen!</p>
+    </section>
+  </main>
+
+  <script>
+    // Word pairs (constant). Avoid mutating this.
+    const WORD_PAIRS = [
+      ["Coffee","Tea"],["Burger","Pizza"],["Sushi","Steak"],["Shawarma","Falafel"],["Pepsi","Coca Cola"],
+      ["Pasta","Indomie"],["Kunafa","Baklava"],["Red Bull","Monster"],["Water","Sparkling Water"],["Chocolate","Vanilla"],
+      ["Apple","Banana"],["Mango","Pineapple"],["Milk","Yogurt"],["Honey","Jam"],["Oats","Cornflakes"],
+      ["iPhone","Android"],["Instagram","TikTok"],["WhatsApp","Telegram"],["ChatGPT","Google"],["Netflix","YouTube"],
+      ["Laptop","PC"],["PlayStation","Xbox"],["Windows","MacOS"],["Uber","Careem"],["Spotify","Apple Music"],
+      ["Tesla","Ferrari"],["Bitcoin","Gold"],["Discord","Slack"],["Zoom","Teams"],["Fortnite","Minecraft"],
+      ["Dubai","Riyadh"],["Beach","Swimming Pool"],["Cinema","Theater"],["Gym","Stadium"],["Library","Museum"],
+      ["Forest","Park"],["Desert","Mountain"],["Moon","Mars"],["Sun","Stars"],["Rain","Snow"],
+      ["School","University"],["Office","Home"],["Mall","Market"],["Plane","Train"],["Hotel","Airbnb"],
+      ["Nike","Adidas"],["Rolex","Casio"],["Money","Fame"],["Cat","Dog"],["Lion","Tiger"],
+      ["Doctor","Engineer"],["Pilot","Captain"],["Guitar","Piano"],["Sleep","Work"],["Summer","Winter"],
+      ["Morning","Night"],["Running","Walking"],["Reading","Watching"],["Singing","Dancing"],["Love","Friendship"]
+    ];
+
+    // Utility: Fisher-Yates shuffle (in-place)
+    function shuffleInPlace(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    // State
+    let players = [];
+    let currentIndex = 0;
+    let numPlayers = 0;
+
+    // Elements
+    const startBtn = document.getElementById('startBtn');
+    const setupSection = document.getElementById('setup');
+    const gameplaySection = document.getElementById('gameplay');
+    const playerBadge = document.getElementById('playerBadge');
+    const passScreen = document.getElementById('passScreen');
+    const secretCard = document.getElementById('secretCard');
+    const revealBtn = document.getElementById('revealBtn');
+    const instruction = document.getElementById('instruction');
+    const secretWordEl = document.getElementById('secretWord');
+    const nextBtn = document.getElementById('nextBtn');
+    const passPlayer = document.getElementById('passPlayer');
+    const playerCountInput = document.getElementById('playerCount');
+    const custom1Input = document.getElementById('custom1');
+    const custom2Input = document.getElementById('custom2');
+
+    // Accessibility: allow space/enter to reveal or next when secretCard focused
+    document.addEventListener('keydown', (e) => {
+      if (gameplaySection.classList.contains('hidden')) return;
+
+      if ((e.key === 'Enter' || e.key === ' ') && !passScreen.classList.contains('hidden')) {
+        e.preventDefault();
+        revealBtn.click();
+      } else if ((e.key === 'Enter' || e.key === ' ') && !secretCard.classList.contains('hidden') && secretWordEl.classList.contains('hidden')) {
+        e.preventDefault();
+        revealWord();
+      } else if ((e.key === 'Enter' || e.key === ' ') && nextBtn.classList.contains('!hidden')) {
+        // when next button is visible, allow Enter/Space to trigger
+        e.preventDefault();
+        nextBtn.click();
+      }
+    });
+
+    startBtn.addEventListener('click', startGame);
+    revealBtn.addEventListener('click', () => {
+      // show the secret card and then reveal on tap
+      passScreen.classList.add('hidden');
+      secretCard.classList.remove('hidden');
+      secretCard.focus();
+    });
+
+    // click on secret card or press to reveal
+    secretCard.addEventListener('click', revealWord);
+    secretCard.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') revealWord(); });
+
+    nextBtn.addEventListener('click', () => {
+      // hide secret and show pass screen for next player (or final screen)
+      currentIndex++;
+      setupTurn();
+    });
+
+    function startGame() {
+      currentIndex = 0;
+      numPlayers = parseInt(playerCountInput.value, 10) || 0;
+      if (numPlayers < 3) {
+        return alert("Need at least 3 players!");
+      }
+
+      // Prepare pair: prefer custom pair when both fields provided
+      const c1 = custom1Input.value.trim();
+      const c2 = custom2Input.value.trim();
+      let pair;
+      if (c1 && c2) {
+        // sanitize length-limited strings (we already limit maxlength)
+        pair = [c1.slice(0,32), c2.slice(0,32)];
+      } else {
+        // pick a random pair from WORD_PAIRS (copy to avoid mutating constant)
+        const randomPair = WORD_PAIRS[Math.floor(Math.random() * WORD_PAIRS.length)];
+        pair = [randomPair[0], randomPair[1]];
+      }
+
+      // Shuffle the pair to randomly decide which is majority and which is odd-one
+      const [a, b] = shuffleInPlace([...pair]);
+      const majorityWord = a;
+      const oddWord = b;
+
+      // Fill players with majorityWord, then replace exactly one slot with oddWord at a random position
+      players = Array(numPlayers).fill(majorityWord);
+      const oddIndex = Math.floor(Math.random() * numPlayers);
+      players[oddIndex] = oddWord;
+
+      // Shuffle the players array to randomize order so players don't know positions
+      players = shuffleInPlace(players);
+
+      // Switch views and start turns
+      setupSection.classList.add('hidden');
+      gameplaySection.classList.remove('hidden');
+      setupTurn();
+    }
+
+    function setupTurn() {
+      // If finished all players
+      if (currentIndex >= numPlayers) {
+        showEndScreen();
+        return;
+      }
+
+      // Update UI to show pass screen for the current player
+      playerBadge.textContent = `Player ${currentIndex + 1}`;
+      passPlayer.textContent = `Player ${currentIndex + 1}`;
+
+      // Reset views
+      passScreen.classList.remove('hidden');
+      secretCard.classList.add('hidden');
+      secretWordEl.classList.add('hidden');
+      instruction.classList.remove('hidden');
+      nextBtn.classList.add('hidden');
+
+      // Set secret word text (but keep hidden until reveal)
+      secretWordEl.textContent = players[currentIndex];
+
+      // Move focus to reveal button for keyboard users
+      revealBtn.focus();
+    }
+
+    function revealWord() {
+      // reveal the secret word
+      secretWordEl.classList.remove('hidden');
+      instruction.classList.add('hidden');
+      nextBtn.classList.remove('hidden');
+      // vibration (guarded)
+      if (navigator.vibrate) {
+        try { navigator.vibrate(50); } catch (e) { /* ignore */ }
+      }
+      // focus next button for quick flow
+      nextBtn.focus();
+    }
+
+    function showEndScreen() {
+      // Show final message and give the option to reveal odd-one out (optional)
+      gameplaySection.innerHTML = `
+        <div class="bg-slate-800 p-8 rounded-[2.5rem] border border-slate-700">
+          <h2 class="text-4xl font-black mb-4">GAME ON!</h2>
+          <p class="text-slate-400 leading-relaxed mb-6 font-medium">Everyone has their word. Start the conversation. Find the player who has the word that doesn't fit.</p>
+          <div class="space-y-3">
+            <button id="newRoundBtn" type="button" class="w-full bg-slate-700 py-4 rounded-2xl font-black text-lg uppercase tracking-widest shadow-lg">New Round</button>
+            <button id="revealOddBtn" type="button" class="w-full card-gradient py-4 rounded-2xl font-black text-lg uppercase tracking-widest shadow-lg">Reveal Odd One Out</button>
+          </div>
+        </div>
+      `;
+
+      // attach events for dynamic buttons
+      document.getElementById('newRoundBtn').addEventListener('click', () => location.reload());
+      document.getElementById('revealOddBtn').addEventListener('click', revealOddOneOut);
+    }
+
+    function revealOddOneOut() {
+      // compute which word occurs less often and present to the user
+      const tally = {};
+      for (const w of players) tally[w] = (tally[w] || 0) + 1;
+      // find entry with min count
+      let minWord = null, minCount = Infinity;
+      for (const w in tally) {
+        if (tally[w] < minCount) { minCount = tally[w]; minWord = w; }
+      }
+
+      // show a simple overlay with the odd word
+      const overlay = document.createElement('div');
+      overlay.className = 'fixed inset-0 flex items-center justify-center bg-black/60 p-4';
+      overlay.innerHTML = `
+        <div class="bg-slate-900 p-6 rounded-3xl text-center border border-slate-700 max-w-sm">
+          <h3 class="text-3xl font-black mb-3">Odd One Out</h3>
+          <p class="text-slate-200 text-xl mb-6">${String(minWord)}</p>
+          <button id="closeOdd" class="w-full bg-white text-slate-900 py-3 rounded-2xl font-bold">Close</button>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+      document.getElementById('closeOdd').addEventListener('click', () => overlay.remove());
+    }
+
+    // Keep focusable areas usable on load (optional)
+    window.addEventListener('load', () => {
+      // Put pointer focus on start for quick keyboard users
+      startBtn.focus();
+    });
+  </script>
+</body>
+</html>
