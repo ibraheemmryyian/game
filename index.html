@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <!-- removed maximum-scale to preserve zoom accessibility -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Salfeh Blind Pro</title>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -10,4 +9,289 @@
     .card-gradient { background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); }
     body { background-color: #0f172a; color: white; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
     .hide-scrollbar::-webkit-scrollbar { display: none; }
-    .visually-hidden { position: absolute !important; height: 1px; width: 1px; overflow: hidden; c...
+    .visually-hidden { position: absolute !important; height: 1px; width: 1px; overflow: hidden; clip: rect(1px, 1px, 1px, 1px); white-space: nowrap; }
+  </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4 hide-scrollbar">
+
+  <main class="w-full max-w-md">
+    <section id="setup" class="space-y-6">
+      <h1 class="text-4xl font-black text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">SALFEH BLIND</h1>
+
+      <div class="bg-slate-800 p-6 rounded-3xl shadow-xl space-y-4 border border-slate-700">
+        <div>
+          <label for="playerCount" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 text-center">Number of Players</label>
+          <input type="number" id="playerCount" value="3" min="3" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-center text-2xl font-bold focus:ring-2 focus:ring-purple-500 outline-none" inputmode="numeric" />
+        </div>
+
+        <div class="pt-2">
+          <button id="startBtn" type="button" class="w-full card-gradient hover:opacity-90 transition-all py-5 rounded-2xl font-black text-xl shadow-lg uppercase tracking-wider">Start Game</button>
+        </div>
+      </div>
+
+      <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50">
+        <p class="text-xs text-slate-400 mb-2 text-center font-semibold uppercase">Add Custom Pair (Optional)</p>
+        <div class="flex gap-2">
+          <label for="custom1" class="visually-hidden">Word A</label>
+          <input type="text" id="custom1" maxlength="32" placeholder="Word A" class="w-1/2 bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm outline-none" />
+          <label for="custom2" class="visually-hidden">Word B</label>
+          <input type="text" id="custom2" maxlength="32" placeholder="Word B" class="w-1/2 bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm outline-none" />
+        </div>
+      </div>
+    </section>
+
+    <section id="gameplay" class="hidden text-center space-y-6" aria-live="polite">
+      <div class="bg-slate-800 p-8 rounded-[2.5rem] shadow-2xl border-2 border-slate-700 relative overflow-hidden">
+        <div id="playerBadge" class="inline-block px-4 py-1 rounded-full bg-purple-500/20 text-purple-400 text-xs font-bold uppercase mb-4">Player 1</div>
+
+        <div id="cardArea" class="py-8 px-4 bg-slate-900 rounded-3xl border-2 border-dashed border-slate-700">
+          <div id="passScreen" class="space-y-4">
+            <p id="passText" class="text-slate-400 font-medium">Pass the device to <span id="passPlayer">Player 1</span></p>
+            <button id="revealBtn" type="button" class="w-full card-gradient hover:opacity-90 transition-all py-4 rounded-2xl font-black text-xl shadow-lg uppercase tracking-wider">Reveal Word</button>
+          </div>
+
+          <div id="secretCard" class="hidden cursor-pointer" tabindex="0">
+            <p id="instruction" class="text-slate-500 font-medium">TAP TO REVEAL</p>
+            <h3 id="secretWord" class="hidden text-5xl font-black tracking-tighter text-white uppercase italic" aria-live="assertive">---</h3>
+          </div>
+        </div>
+
+        <button id="nextBtn" type="button" class="hidden w-full mt-8 bg-white text-slate-900 py-5 rounded-2xl font-black text-xl transition-transform active:scale-95 shadow-xl">I've Seen It</button>
+      </div>
+
+      <p class="text-slate-500 text-xs font-medium uppercase tracking-widest">Don't let anyone see your screen!</p>
+    </section>
+  </main>
+
+  <script>
+    // Expanded WORD_PAIRS including jobs, work, food, transportation, and more eclectic/out-of-pocket pairs
+    const WORD_PAIRS = [
+      // Jobs & Work
+      ["Doctor","Electrician"], ["Chef","Software Engineer"], ["Pilot","Barista"], ["Teacher","Plumber"],
+      ["Nurse","Mechanic"], ["Architect","Taxi Driver"], ["Data Scientist","Baker"], ["Lawyer","Painter"],
+      ["Accountant","Florist"], ["Project Manager","Chauffeur"], ["Carpenter","Waiter"], ["Surgeon","Courier"],
+      ["Pharmacist","Lifeguard"], ["Journalist","Bartender"], ["Scientist","Butcher"], ["HR","Paramedic"],
+      ["UX Designer","Delivery Rider"], ["AI Researcher","Window Cleaner"], ["Civil Engineer","Janitor"],
+      ["Comedian","Sommelier"],
+
+      // Food & Drink
+      ["Pizza","Sushi"], ["Burger","Salad"], ["Ramen","Tacos"], ["Kebab","Pierogi"],
+      ["Gelato","Baklava"], ["Curry","Pasta"], ["Dumpling","Gnocchi"], ["Smoothie","Espresso"],
+      ["Donut","Croissant"], ["Steak","Vegan Bowl"], ["Omelette","Shakshuka"], ["Falafel","Poutine"],
+      ["Sashimi","Ceviche"], ["Bento","Couscous"], ["Kimchi","Brisket"], ["Paneer","Hummus"],
+      ["Miso","Polenta"], ["Tofu","Lamb"], ["Quinoa","Macaron"], ["Kombucha","Root Beer"],
+
+      // Transportation & Vehicles
+      ["Bicycle","Scooter"], ["Subway","Ferry"], ["Tram","Monorail"], ["Helicopter","Hot Air Balloon"],
+      ["Motorbike","Rickshaw"], ["Skateboard","Segway"], ["Cab","Tram"], ["Yacht","Speedboat"],
+      ["Cargo Ship","Freight Train"], ["Spacecraft","Drone"], ["RV","Campervan"], ["Limousine","Shared Ride"],
+      ["Bus","Shuttle"], ["E-bike","Tuk-tuk"], ["Convertible","Pickup"], ["Hoverboard","Sailboat"],
+
+      // Mixed / Out-of-pocket (random)
+      ["Quixotic","Nebula"], ["Palimpsest","Marigold"], ["Lugubrious","Turntable"], ["Zeitgeist","Kaleidoscope"],
+      ["Ephemeral","Firewall"], ["Panacea","Trombone"], ["Numinous","Bicycle"], ["Petrichor","Turnip"],
+      ["Gossamer","Blueprint"], ["Palindrome","Stethoscope"], ["Noctilucent","Chimichanga"], ["Somnambulist","Cactus"],
+      ["Obelisk","Marzipan"], ["Sesquipedalian","Compass"], ["Halcyon","Cantilever"], ["Provenance","Monocle"],
+      ["Caliphate","Quantum"], ["Dystopia","Marmalade"], ["Golem","Lute"], ["Iconoclast","Nebuchadnezzar"],
+
+      // Jobs + Random
+      ["Baker","Quasar"], ["Taxi Driver","Mellifluous"], ["Pilot","Corkscrew"], ["Mechanic","Origami"],
+      ["Florist","Semaphore"], ["Butcher","Nebula"], ["Barista","Tesseract"], ["Electrician","Saffron"],
+
+      // Food + Random
+      ["Pancake","Obsidian"], ["Souvlaki","Gondola"], ["Biryani","Monocle"], ["Bagel","Toothbrush"],
+      ["Scone","Lantern"], ["Clafoutis","Xylophone"], ["Mochi","Compass"], ["Churro","Trombone"],
+
+      // Transportation + Random
+      ["Cargo Van","Palate"], ["Scooter","Aperture"], ["Ferry","Yttrium"], ["Freight Train","Velvet"],
+      ["Jet","Candelabra"], ["Blimp","Apricot"], ["Submarine","Marimba"], ["Tuk-tuk","Geyser"],
+
+      // More jobs, food, transport combos
+      ["Surgeon","Sushi"], ["Paramedic","Pizza"], ["Architect","Bus"], ["Data Analyst","Donut"],
+      ["Mechanic","Motorbike"], ["UX Researcher","Coffee"], ["Police Officer","Taxi"], ["Chef","Bicycle"],
+      ["Teacher","Sandwich"], ["Plumber","Tram"],
+
+      // Misc long/odd words and items
+      ["Mellifluous","Polaroid"], ["Iridescent","Passport"], ["Ebullient","Porcelain"], ["Labyrinthine","Sandwich"],
+      ["Cerulean","Wrench"], ["Liminal","Sputnik"], ["Raconteur","Igloo"], ["Tautology","Spatula"],
+      ["Ululation","Quilt"], ["Widdershins","Corkscrew"], ["Xenolith","Percolator"], ["Yore","Slackline"],
+      ["Algorithm","Gondola"], ["Bytecode","Candelabra"], ["Entropy","Mandolin"], ["Flux","Pumper"],
+
+      // Everyday items & jobs & travel
+      ["Laptop","Mechanic"], ["Backpack","Hiker"], ["Passport","Immigration Officer"], ["Ticket","Conductor"],
+      ["Ferry Ticket","Deckhand"], ["Steering Wheel","Driver"], ["Cargo","Dockworker"], ["Map","Navigator"],
+
+      // Quick random mixes
+      ["Kombucha","Busker"], ["Bento","Photographer"], ["Accordion","Postal Worker"], ["Truffle","Cab Driver"],
+      ["Drone","Farmer"], ["Sprocket","Chef"], ["Marimba","Barber"], ["Trombone","Librarian"],
+
+      // Short and punchy
+      ["Bike","Chef"], ["Sushi","Pilot"], ["Train","Engineer"], ["Truck","Welder"], ["Ship","Captain"],
+
+      // Safety: some duplicates intentionally mixed for randomness
+      ["Pizza","Pilot"], ["Burger","Barista"], ["Taxi","Teacher"], ["Doctor","Doughnut"]
+    ];
+
+    // Utility: Fisher-Yates shuffle (in-place)
+    function shuffleInPlace(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    // State
+    let players = [];
+    let currentIndex = 0;
+    let numPlayers = 0;
+
+    // Elements
+    const startBtn = document.getElementById('startBtn');
+    const setupSection = document.getElementById('setup');
+    const gameplaySection = document.getElementById('gameplay');
+    const playerBadge = document.getElementById('playerBadge');
+    const passScreen = document.getElementById('passScreen');
+    const secretCard = document.getElementById('secretCard');
+    const revealBtn = document.getElementById('revealBtn');
+    const instruction = document.getElementById('instruction');
+    const secretWordEl = document.getElementById('secretWord');
+    const nextBtn = document.getElementById('nextBtn');
+    const passPlayer = document.getElementById('passPlayer');
+    const playerCountInput = document.getElementById('playerCount');
+    const custom1Input = document.getElementById('custom1');
+    const custom2Input = document.getElementById('custom2');
+
+    document.addEventListener('keydown', (e) => {
+      if (gameplaySection.classList.contains('hidden')) return;
+
+      if ((e.key === 'Enter' || e.key === ' ') && !passScreen.classList.contains('hidden')) {
+        e.preventDefault();
+        revealBtn.click();
+      } else if ((e.key === 'Enter' || e.key === ' ') && !secretCard.classList.contains('hidden') && secretWordEl.classList.contains('hidden')) {
+        e.preventDefault();
+        revealWord();
+      } else if ((e.key === 'Enter' || e.key === ' ') && !nextBtn.classList.contains('hidden')) {
+        e.preventDefault();
+        nextBtn.click();
+      }
+    });
+
+    startBtn.addEventListener('click', startGame);
+    revealBtn.addEventListener('click', () => {
+      passScreen.classList.add('hidden');
+      secretCard.classList.remove('hidden');
+      secretCard.focus();
+    });
+
+    secretCard.addEventListener('click', revealWord);
+    secretCard.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') revealWord(); });
+
+    nextBtn.addEventListener('click', () => {
+      currentIndex++;
+      setupTurn();
+    });
+
+    function startGame() {
+      currentIndex = 0;
+      numPlayers = parseInt(playerCountInput.value, 10) || 0;
+      if (numPlayers < 3) {
+        return alert("Need at least 3 players!");
+      }
+
+      const c1 = custom1Input.value.trim();
+      const c2 = custom2Input.value.trim();
+      let pair;
+      if (c1 && c2) {
+        pair = [c1.slice(0,32), c2.slice(0,32)];
+      } else {
+        const randomPair = WORD_PAIRS[Math.floor(Math.random() * WORD_PAIRS.length)];
+        pair = [randomPair[0], randomPair[1]];
+      }
+
+      const [a, b] = shuffleInPlace([...pair]);
+      const majorityWord = a;
+      const oddWord = b;
+
+      players = Array(numPlayers).fill(majorityWord);
+      const oddIndex = Math.floor(Math.random() * numPlayers);
+      players[oddIndex] = oddWord;
+      players = shuffleInPlace(players);
+
+      setupSection.classList.add('hidden');
+      gameplaySection.classList.remove('hidden');
+      setupTurn();
+    }
+
+    function setupTurn() {
+      if (currentIndex >= numPlayers) {
+        showEndScreen();
+        return;
+      }
+
+      playerBadge.textContent = `Player ${currentIndex + 1}`;
+      passPlayer.textContent = `Player ${currentIndex + 1}`;
+
+      passScreen.classList.remove('hidden');
+      secretCard.classList.add('hidden');
+      secretWordEl.classList.add('hidden');
+      instruction.classList.remove('hidden');
+      nextBtn.classList.add('hidden');
+
+      secretWordEl.textContent = players[currentIndex];
+      revealBtn.focus();
+    }
+
+    function revealWord() {
+      secretWordEl.classList.remove('hidden');
+      instruction.classList.add('hidden');
+      nextBtn.classList.remove('hidden');
+      if (navigator.vibrate) {
+        try { navigator.vibrate(50); } catch (e) { }
+      }
+      nextBtn.focus();
+    }
+
+    function showEndScreen() {
+      gameplaySection.innerHTML = `
+        <div class="bg-slate-800 p-8 rounded-[2.5rem] border border-slate-700">
+          <h2 class="text-4xl font-black mb-4">GAME ON!</h2>
+          <p class="text-slate-400 leading-relaxed mb-6 font-medium">Everyone has their word. Start the conversation. Find the player who has the word that doesn't fit.</p>
+          <div class="space-y-3">
+            <button id="newRoundBtn" type="button" class="w-full bg-slate-700 py-4 rounded-2xl font-black text-lg uppercase tracking-widest shadow-lg">New Round</button>
+            <button id="revealOddBtn" type="button" class="w-full card-gradient py-4 rounded-2xl font-black text-lg uppercase tracking-widest shadow-lg">Reveal Odd One Out</button>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('newRoundBtn').addEventListener('click', () => location.reload());
+      document.getElementById('revealOddBtn').addEventListener('click', revealOddOneOut);
+    }
+
+    function revealOddOneOut() {
+      const tally = {};
+      for (const w of players) tally[w] = (tally[w] || 0) + 1;
+      let minWord = null, minCount = Infinity;
+      for (const w in tally) {
+        if (tally[w] < minCount) { minCount = tally[w]; minWord = w; }
+      }
+
+      const overlay = document.createElement('div');
+      overlay.className = 'fixed inset-0 flex items-center justify-center bg-black/60 p-4';
+      overlay.innerHTML = `
+        <div class="bg-slate-900 p-6 rounded-3xl text-center border border-slate-700 max-w-sm">
+          <h3 class="text-3xl font-black mb-3">Odd One Out</h3>
+          <p class="text-slate-200 text-xl mb-6">${String(minWord)}</p>
+          <button id="closeOdd" class="w-full bg-white text-slate-900 py-3 rounded-2xl font-bold">Close</button>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+      document.getElementById('closeOdd').addEventListener('click', () => overlay.remove());
+    }
+
+    window.addEventListener('load', () => {
+      startBtn.focus();
+    });
+  </script>
+</body>
+</html>
