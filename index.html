@@ -64,45 +64,50 @@
   </main>
 
   <script>
-    // Refined category lists: familiar, slightly interesting, not obscure or overly simple.
+    // Curated, game-friendly category words:
+    // - Familiar, slightly interesting, not obscure, not overly simple
     const CATEGORIES = {
       food: [
-        "Margherita", "Carbonara", "Sushi", "Ramen", "Tacos", "Burrito", "Curry", "Paella",
-        "Risotto", "Dumplings", "Burger", "Salad", "Steak", "Gnocchi", "Pierogi", "Quesadilla"
+        "Margherita", "Carbonara", "Sushi", "Ramen", "Pho", "Tacos", "Burrito", "Biryani",
+        "Paella", "Risotto", "Falafel", "Shawarma", "Gnocchi", "Ceviche", "Empanada", "Crepe"
       ],
       drinks: [
-        "Espresso", "Latte", "Matcha", "Chai", "Lemonade", "Smoothie", "Iced Tea", "Cider",
-        "Milkshake", "Sake", "Port", "Cold Brew"
+        "Espresso", "Cappuccino", "Latte", "Matcha", "Chai", "Cold Brew", "Smoothie", "Lemonade",
+        "Kombucha", "Sake", "Cider", "Milkshake"
       ],
       jobs: [
-        "Doctor", "Nurse", "Teacher", "Chef", "Pilot", "Mechanic", "Artist", "Musician",
-        "Photographer", "Designer", "Developer", "Farmer", "Baker", "Barista", "Courier"
+        "Architect", "Pilot", "Chef", "Nurse", "Teacher", "Mechanic", "Photographer", "Designer",
+        "Developer", "Curator", "Conductor", "Paramedic", "Barista", "Carpenter", "Editor", "Producer"
       ],
       transport: [
-        "Car", "Bus", "Train", "Tram", "Bicycle", "Scooter", "Motorbike", "Plane",
-        "Boat", "Ferry", "Taxi", "Subway"
+        "Bicycle", "Scooter", "Tram", "Subway", "Ferry", "Sailboat", "Train", "Plane",
+        "Helicopter", "Motorbike", "RV", "Taxi", "Coach", "Monorail"
       ],
       places: [
         "Beach", "Park", "Museum", "Library", "Cinema", "Theater", "Cafe", "Restaurant",
         "Market", "Plaza", "Harbor", "Station"
       ],
       animals: [
-        "Dog", "Cat", "Rabbit", "Fox", "Owl", "Dolphin", "Penguin", "Elephant",
-        "Otter", "Horse", "Puffin", "Swan"
+        "Otter", "Hedgehog", "Puffin", "Meerkat", "Kestrel", "Pelican", "Seal", "Panda",
+        "Koala", "Dolphin", "Penguin", "Giraffe", "Elephant", "Squirrel", "Manatee"
       ],
       tech: [
-        "Phone", "Laptop", "Camera", "Headphones", "Router", "Console", "Tablet",
-        "Smartwatch", "Drone", "App", "Speaker", "Monitor"
+        "Smartphone", "Laptop", "Camera", "Drone", "Router", "Console", "Headphones", "Smartwatch",
+        "App", "Server", "Sensor", "VR"
       ],
       entertainment: [
-        "Movie", "Series", "Podcast", "Album", "Concert", "Play", "Standup", "Board Game",
-        "Escape Room", "Festival", "Documentary"
+        "Podcast", "Indie Film", "Documentary", "Standup", "Board Game", "Escape Room",
+        "Musical", "Concert", "Festival", "Sketch Comedy"
       ],
       objects: [
-        "Backpack", "Suitcase", "Lantern", "Compass", "Binoculars", "Thermos",
-        "Notebook", "Wallet", "Key", "Umbrella", "Watch", "Lantern"
+        "Backpack", "Suitcase", "Lantern", "Compass", "Binoculars", "Thermos", "Journal",
+        "Map", "Watch", "Notebook", "Camera Case", "Telescope"
       ]
     };
+
+    // small pet/wild guard: avoid obvious pet-wild pairings
+    const COMMON_PETS = new Set(["dog","cat","rabbit","hamster","parrot","fish"]);
+    const CANID_RELATIVES = new Set(["fox","wolf","coyote","dingo","jackal"]);
 
     function shuffleInPlace(arr) {
       for (let i = arr.length - 1; i > 0; i--) {
@@ -112,7 +117,32 @@
       return arr;
     }
 
-    // Pick a good related pair: choose a category, then two distinct items that are familiar and not trivial matches
+    function isCommon(word) { return COMMON_PETS.has(word.toLowerCase()); }
+    function isCanid(word) { return CANID_RELATIVES.has(word.toLowerCase()); }
+
+    // Ensure pairs are related (same category) but not trivial, not substring, and not awkward (person-object or pet-wild)
+    function isAcceptablePair(a, b) {
+      if (!a || !b) return false;
+      const la = a.toLowerCase(), lb = b.toLowerCase();
+      if (la === lb) return false;
+      if (la.includes(lb) || lb.includes(la)) return false;
+
+      if (isCommon(la) && isCommon(lb)) return false;
+      if ((isCommon(la) && isCanid(lb)) || (isCommon(lb) && isCanid(la))) return false;
+
+      const simpleObjects = ["book","books","kitchen","clinic","class","office","studio","oven","chair"];
+      for (const w of simpleObjects) {
+        if ((la.includes(w) && looksLikePerson(la)) || (lb.includes(w) && looksLikePerson(lb))) return false;
+      }
+      return true;
+    }
+
+    function looksLikePerson(word) {
+      const tokens = ["architect","pilot","chef","nurse","teacher","mechanic","photographer","designer","developer","curator","conductor","paramedic","barista","carpenter","editor","producer"];
+      return tokens.includes(word.toLowerCase());
+    }
+
+    // Pick two distinct items from the same category, with light checks
     function pickRelatedPair() {
       const cats = Object.keys(CATEGORIES);
       for (let attempt = 0; attempt < 8; attempt++) {
@@ -120,8 +150,7 @@
         const items = shuffleInPlace([...CATEGORIES[cat]]);
         for (let i = 0; i < items.length; i++) {
           for (let j = i + 1; j < items.length; j++) {
-            const a = items[i];
-            const b = items[j];
+            const a = items[i], b = items[j];
             if (isAcceptablePair(a, b)) return [a, b];
           }
         }
@@ -129,29 +158,12 @@
       // fallback: any two distinct familiar words
       const all = Object.values(CATEGORIES).flat();
       const s = shuffleInPlace([...all]);
-      return [s[0], s[1]];
-    }
-
-    function isAcceptablePair(a, b) {
-      if (!a || !b) return false;
-      const la = a.toLowerCase();
-      const lb = b.toLowerCase();
-      if (la === lb) return false;
-      if (la.includes(lb) || lb.includes(la)) return false;
-      // avoid direct role-object pairs like "Librarian" + "Books"
-      const simpleObjects = ["book","books","kitchen","clinic","class","office","studio"];
-      for (const w of simpleObjects) {
-        if ((la.includes(w) && isPersonLike(la)) || (lb.includes(w) && isPersonLike(lb))) return false;
+      for (let i = 0; i < s.length; i++) {
+        for (let j = i + 1; j < s.length; j++) {
+          if (isAcceptablePair(s[i], s[j])) return [s[i], s[j]];
+        }
       }
-      return true;
-    }
-
-    function isPersonLike(word) {
-      const tokens = ["ist","er","or","ian","ant","ian","maker","man","woman","engineer","designer","doctor","nurse","chef","teacher","pilot","driver"];
-      for (const t of tokens) if (word.endsWith(t)) return true;
-      // common exact job words:
-      const jobWords = ["doctor","nurse","teacher","chef","pilot","mechanic","artist","musician","photographer","designer","developer","farmer","baker","barista","courier"];
-      return jobWords.includes(word.toLowerCase());
+      return [s[0], s[1]];
     }
 
     // State
@@ -175,6 +187,7 @@
     const custom1Input = document.getElementById('custom1');
     const custom2Input = document.getElementById('custom2');
 
+    // Accessibility: Enter/Space flow
     document.addEventListener('keydown', (e) => {
       if (gameplaySection.classList.contains('hidden')) return;
       if ((e.key === 'Enter' || e.key === ' ') && !passScreen.classList.contains('hidden')) {
@@ -210,7 +223,7 @@
       let pair;
       if (c1 && c2) {
         if (!isAcceptablePair(c1, c2)) {
-          alert("Custom words are too similar or not suitable — please use two distinct but related words.");
+          alert("Custom words are too similar or form an awkward pairing — please use two distinct but related words.");
           return;
         }
         pair = [c1.slice(0,32), c2.slice(0,32)];
@@ -218,10 +231,12 @@
         pair = pickRelatedPair();
       }
 
+      // Randomly choose which becomes majority and which is odd-one-out
       const [a, b] = shuffleInPlace([...pair]);
       const majorityWord = a;
       const oddWord = b;
 
+      // Fill players with majorityWord and place exactly one oddWord
       players = Array(numPlayers).fill(majorityWord);
       const oddIndex = Math.floor(Math.random() * numPlayers);
       players[oddIndex] = oddWord;
