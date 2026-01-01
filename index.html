@@ -64,48 +64,46 @@
   </main>
 
   <script>
-    // Category lists with focused, game-friendly words (related but not identical)
+    // Refined category lists: familiar, slightly interesting, not obscure or overly simple.
     const CATEGORIES = {
       food: [
-        "Margherita", "Bolognese", "Tempura", "Bibimbap", "Shakshuka", "Ratatouille", "Gumbo", "Tapas",
-        "Pierogi", "Ceviche", "Paella", "Risotto", "Tagine", "Souvlaki", "Pho", "Dumplings", "Enchilada", "Burrito", "Sashimi", "Gyoza"
+        "Margherita", "Carbonara", "Sushi", "Ramen", "Tacos", "Burrito", "Curry", "Paella",
+        "Risotto", "Dumplings", "Burger", "Salad", "Steak", "Gnocchi", "Pierogi", "Quesadilla"
       ],
       drinks: [
-        "Espresso", "Cappuccino", "Matcha", "Chai", "Lemonade", "Kombucha", "Smoothie", "Mojito",
-        "Latte", "Macchiato", "Earl Grey", "Cold Brew", "Milkshake", "Hot Chocolate", "Sake", "Port"
+        "Espresso", "Latte", "Matcha", "Chai", "Lemonade", "Smoothie", "Iced Tea", "Cider",
+        "Milkshake", "Sake", "Port", "Cold Brew"
       ],
       jobs: [
-        "Archivist", "Sommelier", "Cartographer", "Zoologist", "Paramedic", "Logistician", "Conservator",
-        "Curator", "Surveyor", "Cartonist", "Producer", "Animator", "Linguist", "Diplomat", "Brewmaster",
-        "Tailor", "Choreographer", "Sound Engineer", "Mediator", "Urban Planner"
+        "Doctor", "Nurse", "Teacher", "Chef", "Pilot", "Mechanic", "Artist", "Musician",
+        "Photographer", "Designer", "Developer", "Farmer", "Baker", "Barista", "Courier"
       ],
       transport: [
-        "Ferry", "Trolley", "Rickshaw", "Cable Car", "Seaplane", "Tram", "Monorail", "Scooter",
-        "Cargo Ship", "Freight Train", "Hovercraft", "Gondola", "Subway", "Streetcar", "Motorbike"
+        "Car", "Bus", "Train", "Tram", "Bicycle", "Scooter", "Motorbike", "Plane",
+        "Boat", "Ferry", "Taxi", "Subway"
       ],
       places: [
-        "Boardwalk", "Conservatory", "Observatory", "Promenade", "Harbor", "Bayside", "Atrium",
-        "Courtyard", "Meadow", "Plaza", "Boulevard", "Pavilion", "Market Square", "Pier"
+        "Beach", "Park", "Museum", "Library", "Cinema", "Theater", "Cafe", "Restaurant",
+        "Market", "Plaza", "Harbor", "Station"
       ],
       animals: [
-        "Otter", "Badger", "Albatross", "Porcupine", "Meerkat", "Iguana", "Salamander", "Hedgehog",
-        "Wren", "Macaque", "Gazelle", "Bison", "Puffin", "Kestrel", "Manatee"
+        "Dog", "Cat", "Rabbit", "Fox", "Owl", "Dolphin", "Penguin", "Elephant",
+        "Otter", "Horse", "Puffin", "Swan"
       ],
       tech: [
-        "Compiler", "Router", "Mainframe", "Firmware", "Drone", "Profiler", "Debugger", "Node",
-        "Gateway", "Endpoint", "Kernel", "Container", "Framework", "SDK", "Daemon"
+        "Phone", "Laptop", "Camera", "Headphones", "Router", "Console", "Tablet",
+        "Smartwatch", "Drone", "App", "Speaker", "Monitor"
       ],
       entertainment: [
-        "Improv", "Indie Film", "Podcast", "Arcade", "Opera", "Street Art", "Sketch Comedy",
-        "Documentary", "Open Mic", "Art House", "Festival", "Escape Room", "Board Game", "Standup"
+        "Movie", "Series", "Podcast", "Album", "Concert", "Play", "Standup", "Board Game",
+        "Escape Room", "Festival", "Documentary"
       ],
       objects: [
-        "Lantern", "Compass", "Telescope", "Hammock", "Thermos", "Canister", "Trunk", "Sextant",
-        "Binoculars", "Blueprint", "Lanai", "Workbench", "Kiln", "Turntable"
+        "Backpack", "Suitcase", "Lantern", "Compass", "Binoculars", "Thermos",
+        "Notebook", "Wallet", "Key", "Umbrella", "Watch", "Lantern"
       ]
     };
 
-    // Utility: Fisher-Yates shuffle (in-place)
     function shuffleInPlace(arr) {
       for (let i = arr.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -114,16 +112,12 @@
       return arr;
     }
 
-    // Choose a related-but-not-identical pair from categories:
-    // - pick a category at random
-    // - pick two distinct items that are not substrings of each other
+    // Pick a good related pair: choose a category, then two distinct items that are familiar and not trivial matches
     function pickRelatedPair() {
       const cats = Object.keys(CATEGORIES);
-      // try a few times to avoid picking a bad pair
-      for (let attempt = 0; attempt < 6; attempt++) {
+      for (let attempt = 0; attempt < 8; attempt++) {
         const cat = cats[Math.floor(Math.random() * cats.length)];
         const items = shuffleInPlace([...CATEGORIES[cat]]);
-        // try to find two items that are distinct and not substrings of one another
         for (let i = 0; i < items.length; i++) {
           for (let j = i + 1; j < items.length; j++) {
             const a = items[i];
@@ -132,7 +126,7 @@
           }
         }
       }
-      // fallback: pick any two distinct words from any category
+      // fallback: any two distinct familiar words
       const all = Object.values(CATEGORIES).flat();
       const s = shuffleInPlace([...all]);
       return [s[0], s[1]];
@@ -144,20 +138,20 @@
       const lb = b.toLowerCase();
       if (la === lb) return false;
       if (la.includes(lb) || lb.includes(la)) return false;
-      // avoid trivial person-object pairing by checking for common short words (simple heuristic)
-      const shortWords = ["book","books","kitchen","office","clinic","class","school"];
-      for (const w of shortWords) {
-        if (la.includes(w) && !lb.includes(w) && isPersonLike(la)) return false;
-        if (lb.includes(w) && !la.includes(w) && isPersonLike(lb)) return false;
+      // avoid direct role-object pairs like "Librarian" + "Books"
+      const simpleObjects = ["book","books","kitchen","clinic","class","office","studio"];
+      for (const w of simpleObjects) {
+        if ((la.includes(w) && isPersonLike(la)) || (lb.includes(w) && isPersonLike(lb))) return false;
       }
       return true;
     }
 
-    // heuristic: words that look like job titles (endings or known tokens)
     function isPersonLike(word) {
-      const tokens = ["ist","er","or","ian","ist","ographer","ian","maker","man","woman","engineer","designer","doctor","nurse","chef","baker","teacher","pilot"];
+      const tokens = ["ist","er","or","ian","ant","ian","maker","man","woman","engineer","designer","doctor","nurse","chef","teacher","pilot","driver"];
       for (const t of tokens) if (word.endsWith(t)) return true;
-      return false;
+      // common exact job words:
+      const jobWords = ["doctor","nurse","teacher","chef","pilot","mechanic","artist","musician","photographer","designer","developer","farmer","baker","barista","courier"];
+      return jobWords.includes(word.toLowerCase());
     }
 
     // State
@@ -181,7 +175,6 @@
     const custom1Input = document.getElementById('custom1');
     const custom2Input = document.getElementById('custom2');
 
-    // Keyboard accessibility
     document.addEventListener('keydown', (e) => {
       if (gameplaySection.classList.contains('hidden')) return;
       if ((e.key === 'Enter' || e.key === ' ') && !passScreen.classList.contains('hidden')) {
@@ -216,9 +209,8 @@
       const c2 = custom2Input.value.trim();
       let pair;
       if (c1 && c2) {
-        // If custom pair identical or too similar, warn and abort
         if (!isAcceptablePair(c1, c2)) {
-          alert("Custom words too similar or not suitable — please use two distinct but related words (e.g. 'Margherita' and 'Bolognese').");
+          alert("Custom words are too similar or not suitable — please use two distinct but related words.");
           return;
         }
         pair = [c1.slice(0,32), c2.slice(0,32)];
@@ -226,12 +218,10 @@
         pair = pickRelatedPair();
       }
 
-      // Randomize which becomes majority and which odd-one-out
       const [a, b] = shuffleInPlace([...pair]);
       const majorityWord = a;
       const oddWord = b;
 
-      // Fill players with majorityWord, place exactly one oddWord
       players = Array(numPlayers).fill(majorityWord);
       const oddIndex = Math.floor(Math.random() * numPlayers);
       players[oddIndex] = oddWord;
@@ -272,7 +262,6 @@
     }
 
     function showEndScreen() {
-      // create end screen safely using DOM methods to avoid injecting user text
       gameplaySection.innerHTML = '';
       const container = document.createElement('div');
       container.className = "bg-slate-800 p-8 rounded-[2.5rem] border border-slate-700 text-center";
@@ -304,7 +293,6 @@
         if (tally[w] < minCount) { minCount = tally[w]; minWord = w; }
       }
 
-      // show overlay safely (textContent)
       const overlay = document.createElement('div');
       overlay.className = 'fixed inset-0 flex items-center justify-center bg-black/60 p-4';
       const panel = document.createElement('div');
