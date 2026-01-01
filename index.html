@@ -64,72 +64,64 @@
   </main>
 
   <script>
-    // Expanded WORD_PAIRS including jobs, work, food, transportation, and more eclectic/out-of-pocket pairs
+    // Related-but-not-identical pairs for subtle imposter gameplay.
+    // Each pair contains two words from the same broad category so the odd-one-out feels plausible but slightly off.
     const WORD_PAIRS = [
-      // Jobs & Work
-      ["Doctor","Electrician"], ["Chef","Software Engineer"], ["Pilot","Barista"], ["Teacher","Plumber"],
-      ["Nurse","Mechanic"], ["Architect","Taxi Driver"], ["Data Scientist","Baker"], ["Lawyer","Painter"],
-      ["Accountant","Florist"], ["Project Manager","Chauffeur"], ["Carpenter","Waiter"], ["Surgeon","Courier"],
-      ["Pharmacist","Lifeguard"], ["Journalist","Bartender"], ["Scientist","Butcher"], ["HR","Paramedic"],
-      ["UX Designer","Delivery Rider"], ["AI Researcher","Window Cleaner"], ["Civil Engineer","Janitor"],
-      ["Comedian","Sommelier"],
+      // Food category (similar but distinct)
+      ["Pizza","Pasta"], ["Sushi","Ramen"], ["Burger","Hotdog"], ["Taco","Burrito"],
+      ["Steak","Grilled Fish"], ["Pancake","Waffle"], ["Salad","Soup"], ["Ice Cream","Milkshake"],
 
-      // Food & Drink
-      ["Pizza","Sushi"], ["Burger","Salad"], ["Ramen","Tacos"], ["Kebab","Pierogi"],
-      ["Gelato","Baklava"], ["Curry","Pasta"], ["Dumpling","Gnocchi"], ["Smoothie","Espresso"],
-      ["Donut","Croissant"], ["Steak","Vegan Bowl"], ["Omelette","Shakshuka"], ["Falafel","Poutine"],
-      ["Sashimi","Ceviche"], ["Bento","Couscous"], ["Kimchi","Brisket"], ["Paneer","Hummus"],
-      ["Miso","Polenta"], ["Tofu","Lamb"], ["Quinoa","Macaron"], ["Kombucha","Root Beer"],
+      // Drinks
+      ["Coffee","Tea"], ["Soda","Juice"], ["Smoothie","Milkshake"], ["Wine","Beer"],
 
-      // Transportation & Vehicles
-      ["Bicycle","Scooter"], ["Subway","Ferry"], ["Tram","Monorail"], ["Helicopter","Hot Air Balloon"],
-      ["Motorbike","Rickshaw"], ["Skateboard","Segway"], ["Cab","Tram"], ["Yacht","Speedboat"],
-      ["Cargo Ship","Freight Train"], ["Spacecraft","Drone"], ["RV","Campervan"], ["Limousine","Shared Ride"],
-      ["Bus","Shuttle"], ["E-bike","Tuk-tuk"], ["Convertible","Pickup"], ["Hoverboard","Sailboat"],
+      // Jobs & work roles
+      ["Doctor","Nurse"], ["Teacher","Professor"], ["Chef","Baker"], ["Mechanic","Electrician"],
+      ["Pilot","Flight Attendant"], ["Driver","Courier"], ["Designer","Developer"], ["Journalist","Photographer"],
 
-      // Mixed / Out-of-pocket (random)
-      ["Quixotic","Nebula"], ["Palimpsest","Marigold"], ["Lugubrious","Turntable"], ["Zeitgeist","Kaleidoscope"],
-      ["Ephemeral","Firewall"], ["Panacea","Trombone"], ["Numinous","Bicycle"], ["Petrichor","Turnip"],
-      ["Gossamer","Blueprint"], ["Palindrome","Stethoscope"], ["Noctilucent","Chimichanga"], ["Somnambulist","Cactus"],
-      ["Obelisk","Marzipan"], ["Sesquipedalian","Compass"], ["Halcyon","Cantilever"], ["Provenance","Monocle"],
-      ["Caliphate","Quantum"], ["Dystopia","Marmalade"], ["Golem","Lute"], ["Iconoclast","Nebuchadnezzar"],
+      // Transportation (related vehicles / modes)
+      ["Car","Taxi"], ["Bus","Coach"], ["Train","Tram"], ["Bicycle","Scooter"],
+      ["Plane","Helicopter"], ["Boat","Ferry"], ["Motorbike","Moped"],
 
-      // Jobs + Random
-      ["Baker","Quasar"], ["Taxi Driver","Mellifluous"], ["Pilot","Corkscrew"], ["Mechanic","Origami"],
-      ["Florist","Semaphore"], ["Butcher","Nebula"], ["Barista","Tesseract"], ["Electrician","Saffron"],
+      // Places & venues
+      ["Restaurant","Cafe"], ["Cinema","Theater"], ["Library","Museum"], ["Park","Beach"],
+      ["Mall","Market"], ["Airport","Station"], ["Gym","Stadium"],
 
-      // Food + Random
-      ["Pancake","Obsidian"], ["Souvlaki","Gondola"], ["Biryani","Monocle"], ["Bagel","Toothbrush"],
-      ["Scone","Lantern"], ["Clafoutis","Xylophone"], ["Mochi","Compass"], ["Churro","Trombone"],
+      // Everyday items (paired by usage/context)
+      ["Phone","Tablet"], ["Laptop","Desktop"], ["Backpack","Suitcase"], ["Wallet","Purse"],
+      ["Shoes","Sneakers"], ["Jacket","Coat"], ["Umbrella","Raincoat"], ["Watch","Bracelet"],
 
-      // Transportation + Random
-      ["Cargo Van","Palate"], ["Scooter","Aperture"], ["Ferry","Yttrium"], ["Freight Train","Velvet"],
-      ["Jet","Candelabra"], ["Blimp","Apricot"], ["Submarine","Marimba"], ["Tuk-tuk","Geyser"],
+      // Animals (same group / domesticated vs wild)
+      ["Cat","Dog"], ["Cow","Sheep"], ["Lion","Tiger"], ["Horse","Donkey"],
+      ["Bird","Parrot"], ["Fish","Shark"],
 
-      // More jobs, food, transport combos
-      ["Surgeon","Sushi"], ["Paramedic","Pizza"], ["Architect","Bus"], ["Data Analyst","Donut"],
-      ["Mechanic","Motorbike"], ["UX Researcher","Coffee"], ["Police Officer","Taxi"], ["Chef","Bicycle"],
-      ["Teacher","Sandwich"], ["Plumber","Tram"],
+      // Entertainment & hobbies
+      ["Guitar","Piano"], ["Book","Magazine"], ["Movie","Series"], ["Football","Basketball"],
+      ["Painting","Photography"], ["Dancing","Singing"],
 
-      // Misc long/odd words and items
-      ["Mellifluous","Polaroid"], ["Iridescent","Passport"], ["Ebullient","Porcelain"], ["Labyrinthine","Sandwich"],
-      ["Cerulean","Wrench"], ["Liminal","Sputnik"], ["Raconteur","Igloo"], ["Tautology","Spatula"],
-      ["Ululation","Quilt"], ["Widdershins","Corkscrew"], ["Xenolith","Percolator"], ["Yore","Slackline"],
-      ["Algorithm","Gondola"], ["Bytecode","Candelabra"], ["Entropy","Mandolin"], ["Flux","Pumper"],
+      // Household / kitchen
+      ["Fork","Spoon"], ["Plate","Bowl"], ["Oven","Stove"], ["Fridge","Freezer"],
+      ["Mop","Broom"], ["Soap","Detergent"],
 
-      // Everyday items & jobs & travel
-      ["Laptop","Mechanic"], ["Backpack","Hiker"], ["Passport","Immigration Officer"], ["Ticket","Conductor"],
-      ["Ferry Ticket","Deckhand"], ["Steering Wheel","Driver"], ["Cargo","Dockworker"], ["Map","Navigator"],
+      // Workplaces & contexts
+      ["Office","Meeting Room"], ["Construction Site","Workshop"], ["Hospital","Clinic"], ["School","University"],
 
-      // Quick random mixes
-      ["Kombucha","Busker"], ["Bento","Photographer"], ["Accordion","Postal Worker"], ["Truffle","Cab Driver"],
-      ["Drone","Farmer"], ["Sprocket","Chef"], ["Marimba","Barber"], ["Trombone","Librarian"],
+      // Food + profession related pairs (subtle)
+      ["Chef","Kitchen"], ["Baker","Oven"], ["Barista","Coffee"], ["Farmer","Field"],
 
-      // Short and punchy
-      ["Bike","Chef"], ["Sushi","Pilot"], ["Train","Engineer"], ["Truck","Welder"], ["Ship","Captain"],
+      // Travel-related contexts
+      ["Ticket","Passport"], ["Luggage","Bag"], ["Map","GPS"], ["Guide","Tour"],
 
-      // Safety: some duplicates intentionally mixed for randomness
-      ["Pizza","Pilot"], ["Burger","Barista"], ["Taxi","Teacher"], ["Doctor","Doughnut"]
+      // Short, easy mixes for quick rounds
+      ["Cake","Pie"], ["Tea","Coffee"], ["Bus","Van"], ["Bike","Skateboard"],
+
+      // Slightly broader category mixes (keeps imposter subtle)
+      ["Salad","Sandwich"], ["Rice","Noodles"], ["Soup","Stew"], ["Sushi","Sashimi"],
+
+      // Mix of jobs & transport for variety
+      ["Driver","Taxi"], ["Mechanic","Garage"], ["Pilot","Runway"], ["Captain","Ship"],
+
+      // Extra friendly pairs
+      ["Teacher","Class"], ["Librarian","Books"], ["Doctor","Clinic"], ["Nurse","Ward"]
     ];
 
     // Utility: Fisher-Yates shuffle (in-place)
@@ -209,13 +201,17 @@
         pair = [randomPair[0], randomPair[1]];
       }
 
+      // Randomize which word will be the majority and which will be odd-one-out
       const [a, b] = shuffleInPlace([...pair]);
       const majorityWord = a;
       const oddWord = b;
 
+      // Fill players with majorityWord, replace exactly one random slot with oddWord
       players = Array(numPlayers).fill(majorityWord);
       const oddIndex = Math.floor(Math.random() * numPlayers);
       players[oddIndex] = oddWord;
+
+      // Shuffle players so order is unpredictable
       players = shuffleInPlace(players);
 
       setupSection.classList.add('hidden');
